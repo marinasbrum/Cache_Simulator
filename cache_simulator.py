@@ -1,6 +1,6 @@
 import sys
 import numpy as np
-import random
+import random as rd
 
 # Começa uma classe para os atributos de entrada
 class Attributes:
@@ -75,7 +75,7 @@ class Sub:
             new_node.prev = self.tail
             self.tail = new_node
 
-    def move_to_end(self, node):
+    def move(self, node):
         if node == self.tail:
             return
         if node == self.head:
@@ -89,7 +89,7 @@ class Sub:
         self.tail.next = node
         self.tail = node
 
-    def remove_head(self):
+    def remove(self):
         if self.head is None:
             return None
         removed = self.head.index
@@ -133,7 +133,6 @@ def main():
     # Checa toda a cache pra ver se esta cheia
     full = all(all(row) for row in cache_val)
 
-    sub_cache = Sub()
     # Itera sobre os dados do arquivo de entrada
     for i in range(0, data.size):   
 
@@ -148,28 +147,15 @@ def main():
             att.addCounter()
 
 def cache_placement(index, tag, cache_val, cache_tag, sub_cache):
-    # Flag serve para não colocar o mesmo dado na cache mais de uma vez
-    flag = False
-
     # Checa se toda a cache está cheia
     full = all(all(row) for row in cache_val)
 
-    # Itera baseado no numero de associatividade
-    for i in range(att.assoc):
-        # Para cada item checa para se esta vazio e faz um miss compulsório, adicionando o dado
-        if cache_val[index][i] == 0 and flag == 0:
-            misses.addCompulsory()
-            cache_val[index][i] = 1
-            cache_tag[index][i] = tag
-            flag = True
-            sub_cache.add(index)
-
     # Verifica se o bloco já está na cache
-    if not flag:
-        for i in range(att.assoc):
-            if cache_tag[index][i] == tag:
-                flag = True
-                break
+    flag = False
+    for i in range(att.assoc):
+        if cache_tag[index][i] == tag:
+            flag = True
+            break
 
     # Se o bloco já estiver na cache, é um hit
     if flag:
@@ -177,7 +163,7 @@ def cache_placement(index, tag, cache_val, cache_tag, sub_cache):
         # Se for LRU, move o bloco para o final da lista encadeada
         if att.sub == 'L':
             node = sub_cache.get_node(index)
-            sub_cache.move_to_end(node)
+            sub_cache.move(node)
     else:
         # Incrementa o contador de misses
         if full:
@@ -191,9 +177,13 @@ def cache_placement(index, tag, cache_val, cache_tag, sub_cache):
         # Se a cache estiver cheia, remove o bloco mais antigo
         if full:
             if att.sub == 'F' and sub_cache.head is not None:
-                removed_index = sub_cache.remove_head()
-            else:  # Aleatório
-                removed_index = random.randint(0, att.assoc - 1)
+                removed_index = sub_cache.remove()
+            elif att.sub == 'L' and sub_cache.head is not None:
+                node = sub_cache.get_node(index)
+                sub_cache.move(node)
+            # Random
+            else:  
+                removed_index = rd.randint(0, 10) % att.assoc
                 cache_val[index][removed_index] = 1
                 cache_tag[index][removed_index] = tag
                 sub_cache.add(index)
